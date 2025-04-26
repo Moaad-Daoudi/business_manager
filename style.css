@@ -1,0 +1,371 @@
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
+
+/* --- Futuristic/Neon Variables --- */
+:root {
+    /* Core Colors */
+    --dark-bg: #0a0a14; /* Very dark blue/purple */
+    --darker-bg: #05050d;
+    --light-text: #e0e0e0;
+    --muted-light-text: #a0a0c0; /* Muted light text */
+
+    /* Neon Accent Colors */
+    --neon-primary: #00f0ff; /* Cyan */
+    --neon-primary-glow: rgba(0, 240, 255, 0.5);
+    --neon-accent: #ff00ff; /* Magenta */
+    --neon-accent-glow: rgba(255, 0, 255, 0.5);
+    --neon-secondary: #7070ff; /* Electric Blue/Purple */
+    --neon-secondary-glow: rgba(112, 112, 255, 0.5);
+
+    /* Bootstrap Overrides (Optional) */
+    --bs-primary: var(--neon-primary);
+    --bs-secondary: var(--neon-secondary);
+    --bs-body-color: var(--light-text);
+    --bs-body-bg: var(--dark-bg);
+    --bs-link-color: var(--neon-primary);
+    --bs-link-hover-color: #fff;
+
+    /* Settings */
+    --font-family: 'Poppins', sans-serif;
+    --navbar-height: 75px;
+    --neon-blur: 15px;
+    --neon-spread: 3px;
+    --glow-pulse-duration: 1.5s;
+}
+
+/* General Styles */
+body {
+    font-family: var(--font-family);
+    background-color: var(--dark-bg);
+    color: var(--light-text);
+    padding-top: var(--navbar-height);
+    line-height: 1.7;
+    overflow-x: hidden; /* Prevent horizontal scroll from glows */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700; /* Bolder headings */
+    color: #fff; /* White headings */
+}
+
+.lead {
+    font-weight: 300;
+    font-size: 1.15rem;
+    color: var(--muted-light-text);
+}
+
+.text-muted-light {
+    color: var(--muted-light-text) !important;
+}
+
+/* --- Neon Effect Classes --- */
+.neon-text-primary {
+    color: #fff;
+    text-shadow:
+        0 0 3px #fff, /* Inner white glow */
+        0 0 5px var(--neon-primary),
+        0 0 var(--neon-blur) var(--neon-primary),
+        0 0 calc(var(--neon-blur) * 2) var(--neon-primary-glow);
+}
+.neon-text-accent {
+    color: #fff;
+     text-shadow:
+        0 0 3px #fff,
+        0 0 5px var(--neon-accent),
+        0 0 var(--neon-blur) var(--neon-accent),
+        0 0 calc(var(--neon-blur) * 2) var(--neon-accent-glow);
+}
+.neon-text-secondary {
+     color: #fff;
+     text-shadow:
+        0 0 3px #fff,
+        0 0 5px var(--neon-secondary),
+        0 0 var(--neon-blur) var(--neon-secondary),
+        0 0 calc(var(--neon-blur) * 2) var(--neon-secondary-glow);
+}
+
+.neon-icon-primary {
+    color: var(--neon-primary);
+    filter: drop-shadow(0 0 5px var(--neon-primary));
+    transition: filter 0.3s ease;
+}
+.neon-icon-accent {
+    color: var(--neon-accent);
+    filter: drop-shadow(0 0 5px var(--neon-accent));
+    transition: filter 0.3s ease;
+}
+*:hover > .neon-icon-primary, *:hover > .neon-icon-accent {
+     filter: drop-shadow(0 0 15px var(--neon-primary)); /* Brighter glow on hover */
+}
+
+.neon-border {
+    border: 1px solid var(--neon-primary);
+    box-shadow: 0 0 5px var(--neon-primary), 0 0 10px inset var(--neon-primary-glow);
+}
+
+/* --- Button Styles --- */
+.neon-button {
+    background-color: transparent;
+    border: 2px solid var(--neon-primary);
+    color: var(--neon-primary);
+    padding: 0.7rem 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 5px var(--neon-primary), 0 0 10px var(--neon-primary-glow) inset;
+    position: relative;
+    overflow: hidden;
+}
+.neon-button::before { /* Shine effect on hover */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s ease;
+}
+.neon-button:hover::before {
+    left: 100%;
+}
+.neon-button:hover {
+    background-color: var(--neon-primary);
+    color: var(--dark-bg);
+    box-shadow: 0 0 10px var(--neon-primary), 0 0 25px var(--neon-primary), 0 0 50px var(--neon-primary-glow);
+    transform: translateY(-2px);
+}
+
+.neon-button-outline { /* Secondary button style */
+     background-color: transparent;
+    border: 2px solid var(--neon-secondary);
+    color: var(--neon-secondary);
+    padding: 0.7rem 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+     box-shadow: 0 0 5px var(--neon-secondary), 0 0 8px var(--neon-secondary-glow) inset;
+}
+.neon-button-outline:hover {
+    background-color: var(--neon-secondary);
+    color: #fff;
+    box-shadow: 0 0 10px var(--neon-secondary), 0 0 20px var(--neon-secondary), 0 0 40px var(--neon-secondary-glow);
+     transform: translateY(-2px);
+}
+
+/* --- Navbar Styling --- */
+.navbar {
+    min-height: var(--navbar-height);
+    background-color: rgba(10, 10, 20, 0.85); /* Semi-transparent dark */
+    backdrop-filter: blur(10px); /* Glass effect */
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2); /* Subtle neon line */
+}
+.navbar-brand {
+    font-size: 1.6rem;
+}
+.navbar .nav-link {
+    font-weight: 500;
+    padding: 0.8rem 1rem;
+    color: var(--muted-light-text);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+    position: relative;
+}
+.navbar .nav-link::after { /* Underline effect */
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--neon-primary);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 5px var(--neon-primary);
+}
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+    color: #fff;
+    text-shadow: 0 0 3px var(--neon-primary-glow);
+}
+.navbar .nav-link:hover::after,
+.navbar .nav-link.active::after {
+    width: 70%;
+}
+.navbar-toggler {
+    border: 1px solid var(--neon-primary);
+    color: var(--neon-primary);
+    font-size: 1.5rem;
+    padding: 0.2rem 0.6rem;
+}
+.navbar-toggler:focus {
+    box-shadow: 0 0 8px var(--neon-primary-glow);
+}
+.navbar-toggler.neon-border-button { /* Custom styling for toggler button */
+    border: 1px solid var(--neon-primary);
+    color: var(--neon-primary);
+    background: transparent;
+    transition: all 0.3s ease;
+}
+.navbar-toggler.neon-border-button:hover {
+    background: rgba(0, 240, 255, 0.1);
+    box-shadow: 0 0 5px var(--neon-primary);
+}
+
+
+/* --- Hero Section Styling --- */
+#hero {
+    min-height: calc(100vh - var(--navbar-height));
+    background: linear-gradient(rgba(10, 10, 20, 0.7), rgba(10, 10, 20, 0.9)), url('images/hero-bg-dark.jpg') no-repeat center center;
+    background-size: cover;
+    color: white;
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden; /* Prevent background elements spilling */
+}
+#hero h1 {
+    font-weight: 800; /* Extra bold */
+}
+#hero p.lead {
+     color: #ccc; /* Slightly brighter lead text */
+}
+
+/* --- Section Styles --- */
+.section-dark {
+    background-color: var(--dark-bg);
+}
+.section-darker {
+    background-color: var(--darker-bg);
+}
+
+/* --- Glass Effect & Card Styling --- */
+.glass-effect {
+    background: rgba(25, 25, 45, 0.3); /* Semi-transparent dark blue/purple */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* Safari support */
+    border-radius: 15px;
+    border: 1px solid rgba(var(--neon-secondary-rgb, 112, 112, 255), 0.15); /* Subtle border */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1), 0 0 10px rgba(var(--neon-secondary-rgb, 112, 112, 255), 0.1) inset;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-effect:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: rgba(var(--neon-primary-rgb, 0, 240, 255), 0.4);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2), 0 0 20px rgba(var(--neon-primary-rgb, 0, 240, 255), 0.2) inset;
+}
+
+/* Apply glass effect to specific cards */
+#how-it-works .step-card,
+#features .feature-item,
+#testimonials .testimonial-card {
+    /* Inherits .glass-effect styles */
+}
+#how-it-works .step-card h3,
+#features .feature-item h3 {
+    color: #eee; /* Slightly brighter headings for cards */
+}
+
+/* Testimonial specific */
+#testimonials .neon-quote {
+    color: var(--light-text);
+    font-style: italic;
+}
+#testimonials .neon-quote i {
+     color: var(--neon-accent); /* Quote icon color */
+}
+#testimonials .blockquote-footer {
+    font-style: normal;
+    font-weight: 600;
+    /* Uses .neon-text-secondary class */
+}
+
+
+/* --- CTA Section Styling --- */
+.cta-section {
+    background: linear-gradient(135deg, var(--darker-bg), var(--dark-bg));
+    border-top: 1px solid rgba(var(--neon-primary-rgb, 0, 240, 255), 0.3);
+    border-bottom: 1px solid rgba(var(--neon-primary-rgb, 0, 240, 255), 0.3);
+    position: relative; /* For potential pseudo elements */
+}
+.cta-section::before { /* Subtle top glow */
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--neon-primary);
+    filter: blur(5px);
+    opacity: 0.6;
+}
+.cta-section .btn-primary.neon-button {
+    /* Uses .neon-button styles */
+     padding: 1rem 2.5rem; /* Larger CTA button */
+     font-size: 1.1rem;
+}
+
+
+/* --- Footer Styling --- */
+.footer-dark {
+    background-color: var(--darker-bg);
+    border-top: 1px solid rgba(var(--neon-secondary-rgb, 112, 112, 255), 0.2);
+}
+.footer-dark .footer-link {
+    color: var(--muted-light-text);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+.footer-dark .footer-link:hover {
+    color: var(--neon-primary);
+    text-shadow: 0 0 5px var(--neon-primary-glow);
+    text-decoration: none !important;
+}
+
+
+/* --- Animations (Example: Pulse) --- */
+@keyframes pulse-glow-primary {
+    0%, 100% {
+        box-shadow: 0 0 5px var(--neon-primary), 0 0 10px var(--neon-primary-glow) inset;
+    }
+    50% {
+        box-shadow: 0 0 10px var(--neon-primary), 0 0 20px var(--neon-primary-glow), 0 0 15px var(--neon-primary-glow) inset;
+    }
+}
+
+/* Apply pulse animation to buttons if desired */
+/* .neon-button, .neon-button-outline {
+    animation: pulse-glow-primary var(--glow-pulse-duration) infinite ease-in-out;
+} */
+/* Note: Constant pulsing on multiple elements can be distracting. Use sparingly. */
+
+
+/* Responsive Adjustments */
+@media (max-width: 767.98px) {
+    #hero {
+        text-align: center;
+        min-height: 80vh;
+    }
+    #hero h1 {
+        font-size: 2.8rem; /* Adjust heading size */
+    }
+     .navbar .btn-primary {
+        margin-top: 1rem;
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
+    .glass-effect:hover { /* Tone down hover effect on mobile */
+        transform: translateY(-5px);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1), 0 0 10px rgba(var(--neon-secondary-rgb, 112, 112, 255), 0.1) inset;
+    }
+}
+
+/* Helper for RGB values in rgba() - Add for colors you use in RGBA */
+/* This helps if you change the hex/hsl value in :root */
+:root {
+    --neon-primary-rgb: 0, 240, 255;
+    --neon-accent-rgb: 255, 0, 255;
+    --neon-secondary-rgb: 112, 112, 255;
+}
