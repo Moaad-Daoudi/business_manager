@@ -311,3 +311,172 @@ class ProjectInfoDialog(QDialog):
         self.animation = QPropertyAnimation(self, b"windowOpacity")
         self.animation.setDuration(250); self.animation.setStartValue(0); self.animation.setEndValue(1)
         self.animation.setEasingCurve(QEasingCurve.InOutQuad); self.animation.start()
+        
+# view/shared_ui.py
+# ... (other imports: QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, Qt, QFont, QColor)
+
+# (Keep RoundedButton, RoundedWidget, BackgroundWidget, LogoWidget, ModernGradientWidget,
+# StyledGroupBox, FeaturesGroupBox, ProjectInfoDialog as they are)
+
+
+# --- NEW: Styled Alert Dialog ---
+class StyledAlertDialog(QDialog):
+    def __init__(self, title, message, alert_type="info", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setMinimumWidth(450)
+        self.setModal(True)
+
+        # Base styling
+        self.setStyleSheet("""
+            QDialog {
+                background-color: white;
+                border-radius: 12px;
+                border: 1px solid #E0E0E0; /* Lighter border */
+            }
+        """)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Header (colored based on alert_type)
+        header_widget = QWidget()
+        header_widget.setMinimumHeight(60) # Reduced header height
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(20, 15, 20, 15)
+
+        icon_label = QLabel() # For icon
+        icon_label.setFixedSize(28, 28)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+
+        if alert_type == "error":
+            header_bg_color = "#FFEBEE" # Light red
+            header_text_color = "#D32F2F" # Darker red
+            icon_char = "✕" # Or use an SVG/PNG icon
+            icon_font_size = "20px"
+        elif alert_type == "warning":
+            header_bg_color = "#FFF9C4" # Light yellow
+            header_text_color = "#FBC02D" # Darker yellow
+            icon_char = "⚠"
+            icon_font_size = "20px"
+        else: # info
+            header_bg_color = "#E3F2FD" # Light blue
+            header_text_color = "#1976D2" # Darker blue
+            icon_char = "ℹ"
+            icon_font_size = "20px"
+
+        header_widget.setStyleSheet(f"""
+            QWidget {{
+                background-color: {header_bg_color};
+                border-top-left-radius: 11px;
+                border-top-right-radius: 11px;
+            }}
+        """)
+
+        icon_label.setText(icon_char)
+        icon_label.setStyleSheet(f"""
+            QLabel {{
+                color: {header_text_color};
+                font-size: {icon_font_size};
+                font-weight: bold;
+                background-color: transparent;
+            }}
+        """)
+
+        self.title_label_dlg = QLabel(title) # Renamed to avoid conflict
+        self.title_label_dlg.setStyleSheet(f"""
+            QLabel {{
+                font-size: 18px;
+                font-weight: 600;
+                color: {header_text_color};
+                background-color: transparent;
+            }}
+        """)
+
+        header_layout.addWidget(icon_label)
+        header_layout.addSpacing(10)
+        header_layout.addWidget(self.title_label_dlg)
+        header_layout.addStretch()
+
+        main_layout.addWidget(header_widget)
+
+        # Message content
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(25, 20, 25, 25) # Increased padding
+        content_layout.setSpacing(15)
+
+        self.message_label_dlg = QLabel(message) # Renamed to avoid conflict
+        self.message_label_dlg.setWordWrap(True)
+        self.message_label_dlg.setStyleSheet("""
+            QLabel {
+                font-size: 15px;
+                color: #424242; /* Dark grey for message */
+                line-height: 140%;
+            }
+        """)
+        content_layout.addWidget(self.message_label_dlg)
+        main_layout.addWidget(content_widget)
+
+        # Footer with OK button
+        footer_widget = QWidget()
+        footer_widget.setStyleSheet("background-color: #F5F5F5; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px;")
+        footer_layout = QHBoxLayout(footer_widget)
+        footer_layout.setContentsMargins(20, 15, 20, 15)
+        footer_layout.addStretch()
+
+        self.ok_button = QPushButton("OK")
+        self.ok_button.setMinimumHeight(36)
+        self.ok_button.setMinimumWidth(90)
+        self.ok_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {header_text_color}; /* Use header text color for button */
+                color: white;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 500;
+                padding: 8px 16px;
+            }}
+            QPushButton:hover {{
+                background-color: {QColor(header_text_color).darker(110).name()};
+            }}
+            QPushButton:pressed {{
+                background-color: {QColor(header_text_color).darker(120).name()};
+            }}
+        """)
+        self.ok_button.clicked.connect(self.accept)
+        footer_layout.addWidget(self.ok_button)
+
+        main_layout.addWidget(footer_widget)
+        self.adjustSize() # Adjust dialog size to content
+
+    @staticmethod
+    def show_alert(title, message, alert_type="info", parent=None):
+        dialog = StyledAlertDialog(title, message, alert_type, parent)
+        return dialog.exec()
+
+# --- QLineEdit Stylesheet Update (within LoginGroupBox/SignupGroupBox or globally) ---
+# We will apply this dynamically. The base style will be in the GroupBox classes.
+# An "error" property will be added to QLineEdit to trigger the red border.
+
+# QLineEdit base style (example for login/signup forms)
+# This will be part of the create_input_field function in login_window.py and signup_window.py
+BASE_LINE_EDIT_STYLE = """
+    QLineEdit {
+        border: 1px solid #BBDEFB; /* Default border */
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 15px;
+        background-color: #E3F2FD;
+    }
+    QLineEdit:focus {
+        border: 2px solid #2196F3; /* Focus border */
+        background-color: white;
+    }
+    QLineEdit[error="true"] { /* Style for error state */
+        border: 2px solid #D32F2F; /* Red border for error */
+        background-color: #FFEBEE; /* Light red background for error */
+    }
+"""
