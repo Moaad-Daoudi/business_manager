@@ -1,9 +1,7 @@
-# processing/user_processing.py
-# from model.user_database_manager import UserDatabaseManager # Injected
 
 class UserProcessor:
-    def __init__(self, user_db_manager): # Expect UserDatabaseManager instance
-        self.user_db_manager = user_db_manager # Changed attribute name for clarity
+    def __init__(self, user_db_manager): 
+        self.user_db_manager = user_db_manager 
 
     def register_new_user(self, name, email, password):
         if not all([name, email, password]):

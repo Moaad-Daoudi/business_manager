@@ -3,7 +3,6 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 from PySide6.QtGui import QFont, QGuiApplication # QGuiApplication for screen info
 import sys
 
-# Controller import (ensure this path is correct)
 from controller.user_controller import UserController
 
 APP_WIDTH = 1200
