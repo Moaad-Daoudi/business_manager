@@ -1,67 +1,73 @@
 # processing/product_processing.py
-# from model.product_database_manager import ProductDatabaseManager # Injected
-
 class ProductProcessor:
-    def __init__(self, product_db_manager): # Now takes ProductDatabaseManager
-        self.product_db_manager = product_db_manager
+    def __init__(self, db_manager):
+        self.db_manager = db_manager
 
-    def add_new_product(self, owner_username, product_data_dict):
-        # Basic validation (can be more extensive)
-        if not owner_username:
-            return False, "Owner username missing.", None
+    def add_new_product(self, user_id, product_data_dict):
+        if not user_id:
+            return False, "User ID missing.", None
         if not product_data_dict.get('product_name') or product_data_dict.get('selling_price') is None:
             return False, "Product name and selling price are required.", None
         
-        try: # Ensure numeric types
+        try:
+            # Ensure numeric types are correct before sending to DB
             product_data_dict['selling_price'] = float(product_data_dict.get('selling_price', 0.0))
-            # Handle optional numeric fields
-            for field, default, type_func in [
-                ('purchase_price', 0.0, float),
-                ('stock_quantity', 0, int),
-                ('low_stock_threshold', 5, int)
-            ]:
+            for field in ['purchase_price', 'stock_quantity', 'low_stock_threshold']:
                 value = product_data_dict.get(field)
-                if value is None or str(value).strip() == "": product_data_dict[field] = default
-                else: product_data_dict[field] = type_func(value)
-        except ValueError:
+                if value is not None and str(value).strip() != "":
+                    if 'price' in field:
+                        product_data_dict[field] = float(value)
+                    else:
+                        product_data_dict[field] = int(value)
+        except (ValueError, TypeError):
             return False, "Invalid numeric value for price or quantity.", None
 
-        product_id, message = self.product_db_manager.add_product(owner_username, product_data_dict)
+        product_id, message = self.db_manager.add_product(user_id, product_data_dict)
         return product_id is not None, message, product_id
 
-    def get_products_for_display(self, owner_username, **kwargs): # search, category, sort etc.
-        if not owner_username:
-            return []
-        products = self.product_db_manager.get_products_by_username(owner_username, **kwargs)
-        # Here you could enrich product data, e.g., calculate "sold quantity" if you had a sales table
-        # For now, just return them.
-        for prod in products:
-            prod['sold_quantity'] = 0 # Placeholder
-            prod['revenue_generated'] = 0.0 # Placeholder
+    def get_products_for_display(self, user_id, **kwargs):
+        if not user_id: return []
+        products = self.db_manager.get_products_by_user_id(user_id, **kwargs)
         return products
 
-    def get_single_product_details(self, owner_username, product_id):
-        if not owner_username or not product_id:
-            return None
-        product = self.product_db_manager.get_product_by_id_and_username(product_id, owner_username)
-        if product:
-            product['sold_quantity'] = 0 # Placeholder
-        return product
+    def get_single_product_details(self, user_id, product_id):
+        if not user_id or not product_id: return None
+        return self.db_manager.get_product_by_id_and_user_id(product_id, user_id)
 
-    def update_product_details(self, owner_username, product_id, product_data_dict):
-        if not owner_username or not product_id:
+    def update_product_details(self, user_id, product_id, product_data_dict):
+        if not user_id or not product_id:
             return False, "User or Product ID missing for update."
-        # ... (type conversions as in add_new_product) ...
-        try:
-            if 'selling_price' in product_data_dict and (product_data_dict['selling_price'] is not None and str(product_data_dict['selling_price']).strip() != ""):
-                product_data_dict['selling_price'] = float(product_data_dict['selling_price'])
-            # ... (other numeric field conversions)
-        except ValueError:
-            return False, "Invalid numeric value during update."
+        
+        return self.db_manager.update_product(product_id, user_id, product_data_dict)
 
-        return self.product_db_manager.update_product(product_id, owner_username, product_data_dict)
-
-    def remove_product(self, owner_username, product_id):
-        if not owner_username or not product_id:
+    def remove_product(self, user_id, product_id):
+        if not user_id or not product_id:
             return False, "User or Product ID missing for delete."
-        return self.product_db_manager.delete_product(product_id, owner_username)
+
+        return self.db_manager.delete_product(product_id, user_id)
+
+    def adjust_product_stock(self, user_id, product_id, adjustment_value):
+        """
+        Adjusts the stock for a single product.
+        'adjustment_value' can be positive (to add stock) or negative (to remove stock).
+        """
+        if not all([user_id, product_id]):
+            return False, "User or Product ID missing."
+        
+        if adjustment_value == 0:
+            return True, "No adjustment made." # Not an error, just no change
+
+        # Get current stock to validate if we are removing too much
+        product = self.db_manager.get_product_by_id_and_user_id(product_id, user_id)
+        if not product:
+            return False, "Product not found."
+            
+        current_stock = product['stock_quantity']
+        new_stock = current_stock + adjustment_value
+
+        if new_stock < 0:
+            return False, f"Cannot adjust stock by {adjustment_value}. It would result in a negative quantity ({new_stock})."
+
+        # The update_product method can be used here for simplicity
+        update_data = {'stock_quantity': new_stock}
+        return self.db_manager.update_product(product_id, user_id, update_data)

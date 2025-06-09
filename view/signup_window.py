@@ -5,8 +5,7 @@ from PySide6.QtWidgets import (
     QWidget, QGroupBox, QLabel, QLineEdit, QFrame, QPushButton,
     QVBoxLayout, QHBoxLayout, QCheckBox, QMessageBox # Added QMessageBox
 )
-# view/signup_window.py
-# ... (other imports)
+
 from .shared_ui import ModernGradientWidget, StyledGroupBox, FeaturesGroupBox, ProjectInfoDialog, StyledAlertDialog, BASE_LINE_EDIT_STYLE # Import new alert
 
 class SignupGroupBox(StyledGroupBox):

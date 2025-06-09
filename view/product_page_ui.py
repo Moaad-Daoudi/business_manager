@@ -1,167 +1,219 @@
 # view/product_page_ui.py
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit,
-    QDoubleSpinBox, QSpinBox, QCheckBox, QPushButton, QFormLayout, QAbstractSpinBox,
-    QTableWidget, QAbstractItemView, QHeaderView, QGroupBox, QSizePolicy
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, 
+    QScrollArea, QGridLayout, QFrame, QComboBox, QSizePolicy
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtGui import QPixmap, QPainter, QIcon
+import os
+
+class ProductCardWidget(QFrame):
+    edit_requested = Signal(int)
+    delete_requested = Signal(int, str)
+
+    def __init__(self, product_data, parent=None):
+        super().__init__(parent)
+        self.product_id = product_data.get('id')
+        self.product_name = product_data.get('product_name', 'N/A')
+        
+        self.setMinimumSize(250, 320)
+        self.setMaximumSize(300, 320)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.setObjectName("productCard")
+        self.setStyleSheet("""
+            #productCard {
+                background-color: white;
+                border: 1px solid #E0E0E0;
+                border-radius: 12px;
+            }
+            #productCard:hover {
+                border: 1px solid #0078D7;
+            }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 10)
+        layout.setSpacing(8)
+
+        self.image_label = QLabel()
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.image_label.setMinimumHeight(150)
+        self.image_label.setStyleSheet("background-color: #F5F5F5; border-top-left-radius: 11px; border-top-right-radius: 11px;")
+        self.set_product_image(product_data.get('image_url'))
+        layout.addWidget(self.image_label)
+
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(15, 5, 15, 5)
+        content_layout.setSpacing(5)
+
+        name_label = QLabel(self.product_name)
+        name_label.setStyleSheet("font-size: 16px; font-weight: 600; color: #333;")
+        name_label.setWordWrap(True)
+        content_layout.addWidget(name_label)
+
+        desc = product_data.get('description', 'No description available.')
+        metrics = self.fontMetrics()
+        elided_desc = metrics.elidedText(desc, Qt.TextElideMode.ElideRight, 220)
+        description_label = QLabel(elided_desc)
+        description_label.setStyleSheet("font-size: 13px; color: #666;")
+        content_layout.addWidget(description_label)
+        
+        content_layout.addStretch()
+
+        info_layout = QHBoxLayout()
+        price = product_data.get('selling_price', 0.0)
+        price_label = QLabel(f"${price:.2f}")
+        price_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #27ae60;")
+        
+        stock = product_data.get('stock_quantity', 0)
+        stock_label = QLabel(f"Stock: {stock}")
+        stock_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        stock_label.setStyleSheet("font-size: 13px; color: #777; font-weight: 500;")
+
+        info_layout.addWidget(price_label)
+        info_layout.addStretch()
+        info_layout.addWidget(stock_label)
+        content_layout.addLayout(info_layout)
+        
+        layout.addLayout(content_layout)
+        layout.addStretch()
+
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(15, 0, 15, 0)
+        
+        details_button = QPushButton("View Details")
+        details_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        details_button.setStyleSheet("""
+            QPushButton { background-color: #E3F2FD; color: #1976D2; border:none; border-radius: 5px; padding: 8px; font-weight: bold; }
+            QPushButton:hover { background-color: #BBDEFB; }
+        """)
+        details_button.clicked.connect(lambda: self.edit_requested.emit(self.product_id))
+
+        delete_button = QPushButton()
+        delete_button.setIcon(QIcon("assets/icons/delete.png"))
+        delete_button.setIconSize(QSize(25, 25))
+        delete_button.setFixedSize(32, 32)
+        delete_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        delete_button.setToolTip("Delete Product")
+        delete_button.setStyleSheet("""
+            QPushButton { background-color: #FFEBEE; color: #D32F2F; border:none; border-radius: 16px; }
+            QPushButton:hover { background-color: #FFCDD2; }
+        """)
+        delete_button.clicked.connect(lambda: self.delete_requested.emit(self.product_id, self.product_name))
+
+        button_layout.addWidget(details_button, 1)
+        button_layout.addWidget(delete_button)
+        layout.addLayout(button_layout)
+
+    def set_product_image(self, image_path):
+        if image_path and os.path.exists(image_path):
+            pixmap = QPixmap(image_path)
+        else:
+            pixmap = QPixmap("assets/placeholder.png")
+
+        if pixmap.isNull():
+            pixmap = QPixmap("assets/placeholder.png")
+
+        scaled_pixmap = pixmap.scaled(280, 150, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+        
+        w, h = 280, 150
+        px, py = (scaled_pixmap.width() - w) / 2, (scaled_pixmap.height() - h) / 2
+        cropped_pixmap = scaled_pixmap.copy(int(px), int(py), w, h)
+        
+        self.image_label.setPixmap(cropped_pixmap)
+
 
 class ProductPageUI(QWidget):
+    GRID_COLUMNS = 4 
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName("ProductPageUI")
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 10, 0, 0)
+        main_layout.setSpacing(20)
 
-        # Main vertical layout for the entire product page content (form + list)
-        main_page_layout = QVBoxLayout(self)
-        main_page_layout.setContentsMargins(0, 0, 0, 0) # Margins handled by BaseDashboardPage
-        main_page_layout.setSpacing(15)
+        top_bar_layout = QHBoxLayout()
+        top_bar_layout.setSpacing(15)
 
-        # --- Form Section ---
-        self.form_groupbox = QGroupBox("Add / Edit Product")
-        self.form_groupbox.setStyleSheet("QGroupBox { font-size: 16px; font-weight: bold; margin-bottom: 10px;} ")
-        form_v_layout = QVBoxLayout(self.form_groupbox) # Layout inside the groupbox
-
-        self.product_form_layout = QFormLayout()
-        self.product_form_layout.setContentsMargins(10, 15, 10, 15) # Padding inside form
-        self.product_form_layout.setSpacing(10)
-        self.product_form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        self.product_form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
-
-
-        self.name_input = QLineEdit()
-        self.sku_input = QLineEdit()
-        self.description_input = QTextEdit()
-        self.description_input.setFixedHeight(80)
-        self.category_input = QLineEdit()
-        self.brand_input = QLineEdit()
-
-        self.purchase_price_input = QDoubleSpinBox()
-        self.purchase_price_input.setPrefix("$ ")
-        self.purchase_price_input.setDecimals(2)
-        self.purchase_price_input.setRange(0, 999999.99)
-        self.purchase_price_input.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-
-        self.selling_price_input = QDoubleSpinBox()
-        self.selling_price_input.setPrefix("$ ")
-        self.selling_price_input.setDecimals(2)
-        self.selling_price_input.setRange(0, 999999.99)
-        self.selling_price_input.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-
-        self.stock_quantity_input = QSpinBox()
-        self.stock_quantity_input.setRange(-99999, 99999) # Allow negative for adjustments? Or keep >=0
-        self.stock_quantity_input.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-
-        self.low_stock_threshold_input = QSpinBox()
-        self.low_stock_threshold_input.setRange(0,9999)
-        self.low_stock_threshold_input.setValue(5) # Default
-        self.low_stock_threshold_input.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-
-        self.supplier_name_input = QLineEdit()
-        self.image_url_input = QLineEdit()
-        self.notes_input = QTextEdit()
-        self.notes_input.setFixedHeight(60)
-        self.is_active_checkbox = QCheckBox("Product is Active")
-        self.is_active_checkbox.setChecked(True)
-
-        # Add rows to form
-        self.product_form_layout.addRow("Name*:", self.name_input)
-        self.product_form_layout.addRow("SKU:", self.sku_input)
-        self.product_form_layout.addRow("Category:", self.category_input)
-        self.product_form_layout.addRow("Brand:", self.brand_input)
-        self.product_form_layout.addRow("Description:", self.description_input)
-        self.product_form_layout.addRow("Purchase Price:", self.purchase_price_input)
-        self.product_form_layout.addRow("Selling Price*:", self.selling_price_input)
-        self.product_form_layout.addRow("Stock Quantity:", self.stock_quantity_input)
-        self.product_form_layout.addRow("Low Stock Threshold:", self.low_stock_threshold_input)
-        self.product_form_layout.addRow("Supplier:", self.supplier_name_input)
-        self.product_form_layout.addRow("Image URL:", self.image_url_input)
-        self.product_form_layout.addRow("Notes:", self.notes_input)
-        self.product_form_layout.addRow("", self.is_active_checkbox)
-
-        form_v_layout.addLayout(self.product_form_layout) # Add QFormLayout to groupbox's QVBoxLayout
-
-        self.form_buttons_layout = QHBoxLayout()
-        self.add_update_button = QPushButton("Add Product")
-        self.add_update_button.setObjectName("addProductButton")
-        self.add_update_button.setStyleSheet("""
-            QPushButton#addProductButton {
+        self.add_product_button = QPushButton(QIcon("assets/icons/add.png"), "  Add New Product")
+        self.add_product_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.add_product_button.setStyleSheet("""
+            QPushButton {
                 background-color: #27ae60; color: white; padding: 10px 20px;
-                border-radius: 5px; font-weight: bold; font-size: 14px;
+                border: none; border-radius: 5px; font-weight: bold; font-size: 14px;
             }
-            QPushButton#addProductButton:hover { background-color: #2ecc71; }
+            QPushButton:hover { background-color: #2ecc71; }
         """)
-        self.clear_form_button = QPushButton("Clear Form")
-        self.clear_form_button.setObjectName("clearProductFormButton")
-        self.clear_form_button.setStyleSheet("""
-            QPushButton#clearProductFormButton {
-                background-color: #95a5a6; color: white; padding: 10px 15px;
-                border-radius: 5px; font-size: 14px;
-            }
-            QPushButton#clearProductFormButton:hover { background-color: #bdc3c7; }
-        """)
-        self.form_buttons_layout.addStretch()
-        self.form_buttons_layout.addWidget(self.clear_form_button)
-        self.form_buttons_layout.addWidget(self.add_update_button)
-        form_v_layout.addLayout(self.form_buttons_layout)
+        top_bar_layout.addWidget(self.add_product_button)
+        top_bar_layout.addStretch(1)
 
-        main_page_layout.addWidget(self.form_groupbox)
-        # self.form_groupbox.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum) # Prevent form from taking too much vertical space
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search by name, SKU, brand...")
+        self.search_input.setMinimumWidth(250)
+        self.search_input.setFixedHeight(38)
+        self.search_input.setStyleSheet("QLineEdit { border: 1px solid #ccc; border-radius: 5px; padding: 0 10px; } QLineEdit:focus { border-color: #0078D7; }")
+        top_bar_layout.addWidget(self.search_input)
 
-        # --- Product List Section ---
-        self.product_list_label = QLabel("Your Products")
-        self.product_list_label.setStyleSheet("font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 5px; color: #34495e;")
-        main_page_layout.addWidget(self.product_list_label)
+        self.sort_combo = QComboBox()
+        self.sort_combo.setFixedHeight(38)
+        self.sort_combo.setMinimumWidth(180)
+        self.sort_combo.setStyleSheet("QComboBox { border: 1px solid #ccc; border-radius: 5px; padding-left: 10px; }")
+        self.sort_combo.addItem("Sort by: Name (A-Z)", ('product_name', 'ASC'))
+        self.sort_combo.addItem("Sort by: Name (Z-A)", ('product_name', 'DESC'))
+        self.sort_combo.addItem("Sort by: Price (Low-High)", ('selling_price', 'ASC'))
+        self.sort_combo.addItem("Sort by: Price (High-Low)", ('selling_price', 'DESC'))
+        self.sort_combo.addItem("Sort by: Stock (Low-High)", ('stock_quantity', 'ASC'))
+        self.sort_combo.addItem("Sort by: Stock (High-Low)", ('stock_quantity', 'DESC'))
+        self.sort_combo.addItem("Sort by: Newest", ('created_at', 'DESC'))
+        top_bar_layout.addWidget(self.sort_combo)
+        
+        main_layout.addLayout(top_bar_layout)
 
-        self.product_table = QTableWidget()
-        self.product_table.setColumnCount(7)
-        self.product_table.setHorizontalHeaderLabels(["ID", "Name", "SKU", "Category", "Sell Price", "Stock", "Active"])
-        self.product_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.product_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.product_table.verticalHeader().setVisible(False)
-        self.product_table.horizontalHeader().setStretchLastSection(True)
-        self.product_table.setAlternatingRowColors(True)
-        self.product_table.setShowGrid(False)
-        self.product_table.setStyleSheet("""
-            QTableWidget { border: 1px solid #ddd; border-radius: 5px; }
-            QHeaderView::section { background-color: #ecf0f1; padding: 5px; border: none; font-weight: bold; }
-            QTableWidget::item { padding: 5px; }
-        """)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setStyleSheet("background-color: transparent;")
 
-        header = self.product_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive) # ID
-        self.product_table.setColumnWidth(0, 50)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)    # Name
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive) # SKU
-        self.product_table.setColumnWidth(2, 120)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive) # Category
-        self.product_table.setColumnWidth(3, 120)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive) # Price
-        self.product_table.setColumnWidth(4, 100)
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive) # Stock
-        self.product_table.setColumnWidth(5, 70)
-        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Interactive) # Active
-        self.product_table.setColumnWidth(6, 70)
+        scroll_content = QWidget()
+        self.cards_layout = QGridLayout(scroll_content)
+        self.cards_layout.setSpacing(20)
+        self.cards_layout.setContentsMargins(5, 5, 5, 5)
+        self.scroll_area.setWidget(scroll_content)
+        
+        main_layout.addWidget(self.scroll_area, 1)
+        
+        self.no_products_label = QLabel()
+        self.no_products_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.no_products_label.setStyleSheet("font-size: 18px; color: #999; font-style: italic;")
+        self.no_products_label.setVisible(False)
+        main_layout.addWidget(self.no_products_label, 1)
 
-        main_page_layout.addWidget(self.product_table)
+    def populate_card_grid(self, products, controller):
+        row, col = 0, 0
+        for product in products:
+            card = ProductCardWidget(product)
+            card.edit_requested.connect(controller.open_edit_product_dialog)
+            card.delete_requested.connect(controller.handle_delete_product_confirmation)
+            
+            self.cards_layout.addWidget(card, row, col)
+            col += 1
+            if col >= self.GRID_COLUMNS:
+                col = 0
+                row += 1
+        self.cards_layout.setRowStretch(row + 1, 1)
 
-        self.list_actions_layout = QHBoxLayout()
-        self.edit_selected_button = QPushButton("Edit Selected")
-        self.edit_selected_button.setObjectName("editProductButton")
-        self.delete_selected_button = QPushButton("Delete Selected")
-        self.delete_selected_button.setObjectName("deleteProductButton")
+    def clear_card_layout(self):
+        while self.cards_layout.count():
+            child = self.cards_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        self.no_products_label.setVisible(False)
+        self.scroll_area.setVisible(True)
 
-        common_action_button_style = """
-            QPushButton { padding: 8px 15px; border-radius: 4px; font-size: 13px; margin-top: 5px;}
-            QPushButton:hover { background-color: #ecf0f1; }
-        """
-        self.edit_selected_button.setStyleSheet(common_action_button_style + "QPushButton { background-color: #e0e0e0; }")
-        self.delete_selected_button.setStyleSheet(common_action_button_style + "QPushButton { background-color: #e74c3c; color: white; } QPushButton:hover { background-color: #c0392b; }")
-
-        self.list_actions_layout.addStretch()
-        self.list_actions_layout.addWidget(self.edit_selected_button)
-        self.list_actions_layout.addWidget(self.delete_selected_button)
-        main_page_layout.addLayout(self.list_actions_layout)
+    def show_no_products_message(self, search_term):
+        if search_term:
+            self.no_products_label.setText(f"No products match your search for '{search_term}'.")
+        else:
+            self.no_products_label.setText("You haven't added any products yet. Click 'Add New Product' to start!")
+        self.scroll_area.setVisible(False)
+        self.no_products_label.setVisible(True)

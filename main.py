@@ -1,14 +1,13 @@
 # main.py
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
-from PySide6.QtGui import QFont, QGuiApplication # QGuiApplication for screen info
+from PySide6.QtGui import QFont, QGuiApplication 
 import sys
-
 from controller.user_controller import UserController
 
 APP_WIDTH = 1200
 APP_HEIGHT = 800
 
-class AppShell(QMainWindow): # This is the main window for the auth pages
+class AppShell(QMainWindow): 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Track App")
