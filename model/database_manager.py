@@ -21,8 +21,8 @@ class DatabaseManager:
             self._connect()
             self._create_users_table()
             self._create_user_products_table()
-            # --- NEW: Call the method to create sales tables on startup ---
             self._create_sales_tables()
+            self._create_goals_table()
         except ConnectionError as e:
             raise ConnectionError(e)
 
@@ -287,6 +287,95 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f"[DatabaseManager] Error getting sales records: {e}")
             return []
+        
+    def _create_goals_table(self):
+        if not self.cursor: return
+        try:
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS goals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    goal_name TEXT NOT NULL,
+                    product_id INTEGER, -- NULL if it's a global goal
+                    target_revenue REAL,
+                    target_quantity INTEGER,
+                    start_date TIMESTAMP NOT NULL,
+                    deadline TIMESTAMP NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY(product_id) REFERENCES user_products(id) ON DELETE SET NULL
+                )
+            """)
+            self.conn.commit()
+            print("[DatabaseManager] Goals table verified/created successfully.")
+        except sqlite3.Error as e:
+            print(f"[DatabaseManager] Error creating goals table: {e}")
+
+    def add_goal(self, user_id, goal_data):
+        if not self.cursor: return False, "Database not connected."
+        try:
+            query = """INSERT INTO goals (user_id, goal_name, product_id, target_revenue, 
+                                          target_quantity, start_date, deadline)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)"""
+            values = (
+                user_id,
+                goal_data['goal_name'],
+                goal_data.get('product_id'),
+                goal_data.get('target_revenue'),
+                goal_data.get('target_quantity'),
+                goal_data['start_date'],
+                goal_data['deadline']
+            )
+            self.cursor.execute(query, values)
+            self.conn.commit()
+            return True, "Goal created successfully."
+        except sqlite3.Error as e:
+            return False, f"Database error: {e}"
+
+    def get_user_goals(self, user_id):
+        if not self.cursor: return []
+        try:
+            self.cursor.execute("SELECT * FROM goals WHERE user_id = ? ORDER BY deadline ASC", (user_id,))
+            rows = self.cursor.fetchall()
+            columns = [desc[0] for desc in self.cursor.description]
+            return [dict(zip(columns, row)) for row in rows]
+        except sqlite3.Error as e:
+            print(f"Error getting goals: {e}")
+            return []
+            
+    def get_sales_progress_for_goal(self, user_id, start_date, end_date, product_id=None):
+        """Calculates total sales revenue and quantity for a given period and optional product."""
+        if not self.cursor: return {'total_revenue': 0, 'total_quantity': 0}
+        
+        query = """SELECT SUM(si.quantity_sold * si.price_at_sale), SUM(si.quantity_sold)
+                   FROM sales s
+                   JOIN sale_items si ON s.id = si.sale_id
+                   WHERE s.user_id = ? AND s.sale_date BETWEEN ? AND ?"""
+        params = [user_id, start_date, end_date]
+        
+        if product_id:
+            query += " AND si.product_id = ?"
+            params.append(product_id)
+            
+        try:
+            self.cursor.execute(query, params)
+            result = self.cursor.fetchone()
+            return {
+                'total_revenue': result[0] or 0.0,
+                'total_quantity': result[1] or 0
+            }
+        except sqlite3.Error as e:
+            print(f"Error calculating progress: {e}")
+            return {'total_revenue': 0, 'total_quantity': 0}
+
+    def delete_goal(self, goal_id, user_id):
+        if not self.cursor: return False, "Database not connected."
+        try:
+            self.cursor.execute("DELETE FROM goals WHERE id = ? AND user_id = ?", (goal_id, user_id))
+            self.conn.commit()
+            return self.cursor.rowcount > 0, "Goal deleted."
+        except sqlite3.Error as e:
+            return False, f"Database error deleting goal: {e}"
 
     def close_connection(self):
         if self.conn:

@@ -1,169 +1,99 @@
 # view/sales_page.py
 from PySide6.QtWidgets import (QTableWidget, QHeaderView, QTableWidgetItem, 
-                               QComboBox, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout)
-from PySide6.QtGui import QFont, QIcon, QPixmap
-from PySide6.QtCore import Qt, QSize
+                               QComboBox, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QWidget)
+from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt
 from datetime import datetime, timedelta
 
-from .base_dashboard_page import BaseDashboardPage 
+from .base_dashboard_page import BaseDashboardPage
 from processing.sales_processor import SalesProcessor
 from processing.product_processing import ProductProcessor
 
 class SalesPage(BaseDashboardPage):
-    def __init__(self, user_id, product_processor, parent=None):
-        super().__init__("Sales Overview", parent=parent) # Changed title for a more modern feel
+    def __init__(self, user_id, product_processor, data_changed_signal, parent=None):
+        super().__init__("Sales History & Revenue", parent=parent)
         self.user_id = user_id
         self.product_processor = product_processor
         self.sales_processor = SalesProcessor(product_processor.db_manager)
 
-        # --- Summary Stat Cards ---
-        self._create_summary_cards(self.content_layout)
+        # Store the signal passed from the parent and connect it to a handler
+        self.data_changed_signal = data_changed_signal
+        self.data_changed_signal.connect(self.handle_global_data_change)
 
-        # --- Filter Bar ---
         self._create_filter_bar(self.content_layout)
-        
-        # --- Sales Table ---
+        self._create_summary_bar(self.content_layout)
+
         self.sales_table = QTableWidget()
-        self._style_sales_table()
+        self.sales_table.setColumnCount(5)
+        self.sales_table.setHorizontalHeaderLabels(["Date", "Product Name", "Quantity Sold", "Price at Sale", "Total Revenue"])
+        self.sales_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.sales_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.sales_table.setAlternatingRowColors(True)
+        self.sales_table.setMinimumHeight(300)
         self.content_layout.addWidget(self.sales_table)
         self.content_layout.addStretch()
 
     def load_page_data(self):
         super().load_page_data()
+        self.handle_global_data_change() # Use the handler for initial load too
+
+    def handle_global_data_change(self):
+        """Called when data is changed elsewhere in the app or on initial page load."""
+        print("SalesPage detected a data change, refreshing...")
+        # Get the currently selected item before clearing
+        current_prod_id = self.product_filter_combo.currentData()
+        current_date_index = self.date_filter_combo.currentIndex()
+
         self._populate_product_filter()
-        self.date_filter_combo.setCurrentIndex(2) # Default to "This Month"
+
+        # Try to restore the previous selection
+        prod_index = self.product_filter_combo.findData(current_prod_id)
+        if prod_index != -1:
+            self.product_filter_combo.setCurrentIndex(prod_index)
+        
+        if current_date_index != -1:
+            self.date_filter_combo.setCurrentIndex(current_date_index)
+        else:
+             self.date_filter_combo.setCurrentIndex(2) # Default to 'This Month'
+
         self._update_sales_display()
 
-    def _create_summary_cards(self, parent_layout):
-        cards_layout = QHBoxLayout()
-        cards_layout.setSpacing(25)
-
-        self.total_revenue_card = self._create_info_card("Total Revenue", "$0.00", "assets/icons/revenue.png")
-        self.items_sold_card = self._create_info_card("Items Sold", "0", "assets/icons/items_sold.png")
-        self.total_sales_card = self._create_info_card("Total Sales", "0", "assets/icons/total_sales.png")
-
-        cards_layout.addWidget(self.total_revenue_card)
-        cards_layout.addWidget(self.items_sold_card)
-        cards_layout.addWidget(self.total_sales_card)
-        cards_layout.addStretch()
-
-        parent_layout.addLayout(cards_layout)
-
-    def _create_info_card(self, title_text, value_text, icon_path):
-        card = QFrame()
-        card.setObjectName("infoCard")
-        card.setMinimumHeight(120)
-        card.setStyleSheet("""
-            #infoCard {
-                background-color: #ffffff;
-                border: 1px solid #e9ecef;
-                border-radius: 8px;
-            }
-        """)
-        card_layout = QHBoxLayout(card)
-        card_layout.setContentsMargins(20, 20, 20, 20)
-
-        icon_label = QLabel()
-        icon_label.setFixedSize(48, 48)
-        icon_label.setPixmap(QPixmap(icon_path).scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        
-        text_layout = QVBoxLayout()
-        text_layout.setSpacing(5)
-        text_layout.setAlignment(Qt.AlignVCenter)
-        
-        title_label = QLabel(title_text)
-        title_label.setStyleSheet("font-size: 14px; color: #6c757d;")
-        
-        value_label = QLabel(value_text)
-        value_label.setObjectName("valueLabel")
-        value_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #212529;")
-        
-        text_layout.addWidget(title_label)
-        text_layout.addWidget(value_label)
-
-        card_layout.addWidget(icon_label)
-        card_layout.addSpacing(15)
-        card_layout.addLayout(text_layout)
-        card_layout.addStretch()
-        
-        return card
-        
     def _create_filter_bar(self, parent_layout):
-        filter_frame = QFrame()
-        filter_frame.setObjectName("filterFrame")
-        filter_frame.setStyleSheet("""
-            #filterFrame { 
-                background-color: #F8F9FA; 
-                border-radius: 8px;
-            }
-        """)
-        filter_layout = QHBoxLayout(filter_frame)
-        filter_layout.setContentsMargins(15, 15, 15, 15)
+        filter_layout = QHBoxLayout()
         filter_layout.setSpacing(15)
 
-        base_style = "border: 1px solid #ccc; border-radius: 4px; padding: 8px;"
-
-        filter_layout.addWidget(QLabel("Product:"))
+        filter_layout.addWidget(QLabel("<b>Filter by Product:</b>"))
         self.product_filter_combo = QComboBox()
         self.product_filter_combo.setMinimumWidth(250)
-        self.product_filter_combo.setStyleSheet(base_style)
         filter_layout.addWidget(self.product_filter_combo)
 
-        filter_layout.addWidget(QLabel("Date Range:"))
+        filter_layout.addWidget(QLabel("<b>Filter by Date:</b>"))
         self.date_filter_combo = QComboBox()
         self.date_filter_combo.addItem("All Time", "all")
         self.date_filter_combo.addItem("This Week", "week")
         self.date_filter_combo.addItem("This Month", "month")
-        self.date_filter_combo.setStyleSheet(base_style)
         filter_layout.addWidget(self.date_filter_combo)
 
         apply_btn = QPushButton("Apply Filters")
-        apply_btn.setCursor(Qt.PointingHandCursor)
-        apply_btn.setStyleSheet("""
-            QPushButton { 
-                background-color: #007bff; color: white; border: none; 
-                border-radius: 4px; padding: 8px 20px; font-weight: bold;
-            }
-            QPushButton:hover { background-color: #0069d9; }
-        """)
         apply_btn.clicked.connect(self._update_sales_display)
-        
-        filter_layout.addStretch()
         filter_layout.addWidget(apply_btn)
         
-        parent_layout.addWidget(filter_frame)
+        filter_layout.addStretch()
+        parent_layout.addLayout(filter_layout)
 
-    def _style_sales_table(self):
-        self.sales_table.setColumnCount(5)
-        self.sales_table.setHorizontalHeaderLabels(["Date", "Product Name", "Qty", "Unit Price", "Total Revenue"])
-        self.sales_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.sales_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.sales_table.setSelectionMode(QTableWidget.SingleSelection)
-        self.sales_table.setAlternatingRowColors(True)
-        self.sales_table.setShowGrid(False)
-        self.sales_table.verticalHeader().setVisible(False)
+    def _create_summary_bar(self, parent_layout):
+        summary_frame = QFrame()
+        summary_frame.setStyleSheet("background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; padding: 15px;")
+        summary_layout = QHBoxLayout(summary_frame)
+        
+        self.total_revenue_label = QLabel("Total Revenue: $0.00")
+        self.items_sold_label = QLabel("Items Sold: 0")
 
-        header = self.sales_table.horizontalHeader()
-        header.setSectionResizeMode(1, QHeaderView.Stretch)
-        header.setStyleSheet("""
-            QHeaderView::section {
-                background-color: #f8f9fa;
-                padding: 8px;
-                border: none;
-                border-bottom: 1px solid #dee2e6;
-                font-size: 13px;
-                font-weight: bold;
-            }
-        """)
-        self.sales_table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                background-color: #ffffff;
-            }
-            QTableWidget::item { padding: 10px; }
-            QTableWidget::item:selected { background-color: #e9ecef; color: #000; }
-        """)
+        for label in [self.total_revenue_label, self.items_sold_label]:
+            label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+            summary_layout.addWidget(label, 0, Qt.AlignCenter)
+        
+        parent_layout.addWidget(summary_frame)
 
     def _populate_product_filter(self):
         self.product_filter_combo.clear()
@@ -201,27 +131,23 @@ class SalesPage(BaseDashboardPage):
         )
 
         self.sales_table.setRowCount(0)
-        total_revenue, total_items_sold = 0, len(sales_data)
+        total_revenue, total_items_sold = 0, 0
 
         for row, sale in enumerate(sales_data):
             self.sales_table.insertRow(row)
             try:
-                sale_date = datetime.fromisoformat(sale['sale_date']).strftime('%b %d, %Y')
+                sale_date = datetime.fromisoformat(sale['sale_date']).strftime('%Y-%m-%d %H:%M')
             except (ValueError, TypeError):
                 sale_date = str(sale['sale_date'])
             
-            qty_item = QTableWidgetItem(str(sale['quantity_sold']))
-            qty_item.setTextAlignment(Qt.AlignCenter)
-
             self.sales_table.setItem(row, 0, QTableWidgetItem(sale_date))
             self.sales_table.setItem(row, 1, QTableWidgetItem(sale['product_name']))
-            self.sales_table.setItem(row, 2, qty_item)
+            self.sales_table.setItem(row, 2, QTableWidgetItem(str(sale['quantity_sold'])))
             self.sales_table.setItem(row, 3, QTableWidgetItem(f"${sale['price_at_sale']:.2f}"))
             self.sales_table.setItem(row, 4, QTableWidgetItem(f"${sale['total_revenue']:.2f}"))
 
             total_revenue += sale['total_revenue']
-        
-        # Update summary cards
-        self.total_revenue_card.findChild(QLabel, "valueLabel").setText(f"${total_revenue:.2f}")
-        self.items_sold_card.findChild(QLabel, "valueLabel").setText(str(sum(s['quantity_sold'] for s in sales_data)))
-        self.total_sales_card.findChild(QLabel, "valueLabel").setText(str(len(sales_data)))
+            total_items_sold += sale['quantity_sold']
+            
+        self.total_revenue_label.setText(f"Total Revenue: ${total_revenue:.2f}")
+        self.items_sold_label.setText(f"Items Sold: {total_items_sold}")

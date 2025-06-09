@@ -15,13 +15,13 @@ from .dashboard_home_page import DashboardHomePage
 from .product_page import ProductPage
 from .sales_page import SalesPage
 from .goals_page import GoalsPage
-from .history_page import HistoryPage
-from .notifications_page import NotificationsPage
 from .profile_page import ProfilePage
 from .settings_page import SettingsPage
 
 class DashboardLayoutWidget(QWidget):
     logout_requested = Signal()
+    # Define the shared signal here. It will be passed to child pages.
+    data_changed = Signal(str)
 
     def __init__(self, user_id, product_processor_instance, parent=None):
         super().__init__(parent)
@@ -53,17 +53,13 @@ class DashboardLayoutWidget(QWidget):
         self.pages = {}
         self.sidebar_buttons = {}
 
-        # This list defines all the pages in your application.
+        # This list defines all pages and the arguments they need.
+        # We pass self.data_changed to the pages that need to communicate.
         page_definitions = [
             ("Dashboard", DashboardHomePage, []),
-            ("Product", ProductPage, [self.user_id, self.product_processor]),
-            # --- THIS IS THE ONLY LINE THAT NEEDED TO BE CHANGED ---
-            # We now pass user_id and product_processor to the SalesPage so it can fetch data.
-            ("Sales", SalesPage, [self.user_id, self.product_processor]),
-            # --------------------------------------------------------
-            ("Goals", GoalsPage, []),
-            ("History", HistoryPage, []),
-            ("Notifications", NotificationsPage, []),
+            ("Product", ProductPage, [self.user_id, self.product_processor, self.data_changed]),
+            ("Sales", SalesPage, [self.user_id, self.product_processor, self.data_changed]),
+            ("Goals", GoalsPage, [self.user_id, self.product_processor, self.data_changed]),
             ("Profile", ProfilePage, []),
             ("Settings", SettingsPage, []),
         ]
@@ -75,7 +71,7 @@ class DashboardLayoutWidget(QWidget):
 
         sidebar_buttons_data = [
             ("Dashbord", "Dashboard"), ("Product", "Product"), ("Sales", "Sales"),
-            ("Goals", "Goals"), ("History", "History"), ("Notifications", "Notifications"),
+            ("Goals", "Goals"),
             ("Profile", "Profile"), ("Setting", "Settings"), ("Log out", "Log Out")
         ]
 
@@ -103,9 +99,6 @@ class DashboardLayoutWidget(QWidget):
 
             self.sidebar_layout.addWidget(button)
             self.sidebar_buttons[page_key_or_action] = button
-
-            if page_key_or_action == "Notifications":
-                self.sidebar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
             if page_key_or_action in self.pages:
                 button.clicked.connect(lambda checked=False, p=page_key_or_action: self.switch_page(p))

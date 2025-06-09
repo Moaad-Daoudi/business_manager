@@ -8,11 +8,16 @@ from .add_product_dialog_ui import AddProductDialogUI
 from .shared_ui import StyledAlertDialog
 
 class ProductPage(BaseDashboardPage):
-    def __init__(self, user_id, product_processor, parent=None):
+    # --- 1. Update the constructor to accept the shared signal ---
+    def __init__(self, user_id, product_processor, data_changed_signal, parent=None):
         super().__init__("Manage Your Products", parent=parent)
         self.user_id = user_id
         self.product_processor = product_processor
         self.current_products = [] 
+
+        # --- 2. Store the signal and connect it to the refresh method ---
+        self.data_changed_signal = data_changed_signal
+        self.data_changed_signal.connect(self.refresh_product_list)
 
         self.ui = ProductPageUI()
         self.content_layout.addWidget(self.ui)
@@ -82,7 +87,8 @@ class ProductPage(BaseDashboardPage):
             success, message, _ = self.product_processor.add_new_product(self.user_id, product_data)
             StyledAlertDialog.show_alert("Add Product", message, "info" if success else "error", self)
             if success:
-                self.refresh_product_list()
+                # --- 3. Emit the signal to notify other pages ---
+                self.data_changed_signal.emit("products")
 
     @Slot(int)
     def open_edit_product_dialog(self, product_id):
@@ -102,7 +108,8 @@ class ProductPage(BaseDashboardPage):
             success, message = self.product_processor.update_product_details(self.user_id, product_id, updated_data)
             StyledAlertDialog.show_alert("Update Product", message, "info" if success else "error", self)
             if success:
-                self.refresh_product_list()
+                # --- 3. Emit the signal to notify other pages ---
+                self.data_changed_signal.emit("products")
 
     @Slot(int, str)
     def handle_delete_product_confirmation(self, product_id, product_name):
@@ -114,4 +121,5 @@ class ProductPage(BaseDashboardPage):
             success, message = self.product_processor.remove_product(self.user_id, product_id)
             StyledAlertDialog.show_alert("Delete Product", message, "info" if success else "error", self)
             if success:
-                self.refresh_product_list()
+                # --- 3. Emit the signal to notify other pages ---
+                self.data_changed_signal.emit("products")
