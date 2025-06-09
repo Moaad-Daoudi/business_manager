@@ -376,6 +376,51 @@ class DatabaseManager:
             return self.cursor.rowcount > 0, "Goal deleted."
         except sqlite3.Error as e:
             return False, f"Database error deleting goal: {e}"
+        
+
+    def get_user_by_id(self, user_id):
+        if not self.cursor: return None
+        try:
+            self.cursor.execute("SELECT id, name, email, password_hash FROM users WHERE id = ?", (user_id,))
+            user_row = self.cursor.fetchone()
+            if user_row:
+                return {"id": user_row[0], "name": user_row[1], "email": user_row[2], "password_hash": user_row[3]}
+            return None
+        except sqlite3.Error as e:
+            print(f"[DatabaseManager] Error getting user by ID: {e}")
+            return None
+
+    def update_user(self, user_id, data_to_update):
+        """Flexibly updates user data based on the provided dictionary."""
+        if not self.cursor or not user_id: return False, "Database not connected."
+
+        set_clauses = []
+        values = []
+        
+        if 'name' in data_to_update:
+            set_clauses.append("name = ?")
+            values.append(data_to_update['name'])
+        if 'email' in data_to_update:
+            set_clauses.append("email = ?")
+            values.append(data_to_update['email'].lower())
+        if 'password' in data_to_update:
+            set_clauses.append("password_hash = ?")
+            values.append(self._hash_password(data_to_update['password']))
+            
+        if not set_clauses:
+            return False, "No valid fields provided for update."
+            
+        values.append(user_id)
+        query = f"UPDATE users SET {', '.join(set_clauses)} WHERE id = ?"
+        
+        try:
+            self.cursor.execute(query, tuple(values))
+            self.conn.commit()
+            return True, "Profile updated successfully."
+        except sqlite3.IntegrityError:
+            return False, "This email address is already in use by another account."
+        except sqlite3.Error as e:
+            return False, f"Database error: {e}"
 
     def close_connection(self):
         if self.conn:

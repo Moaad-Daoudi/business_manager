@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 import os
 
 from processing.product_processing import ProductProcessor
+from processing.user_processing import UserProcessor
 
 from .shared_ui import ModernGradientWidget, LogoWidget
 from .base_dashboard_page import BaseDashboardPage
@@ -20,18 +21,25 @@ from .settings_page import SettingsPage
 
 class DashboardLayoutWidget(QWidget):
     logout_requested = Signal()
-    # Define the shared signal here. It will be passed to child pages.
+    # This signal allows pages to communicate with each other indirectly.
     data_changed = Signal(str)
 
-    def __init__(self, user_id, product_processor_instance, parent=None):
+    def __init__(self, user_id, product_processor_instance, user_processor_instance, parent=None):
         super().__init__(parent)
         self.user_id = user_id
         self.product_processor = product_processor_instance
+        self.user_processor = user_processor_instance
+
+        # Connect the signal to a handler within this layout
+        self.data_changed.connect(self.handle_data_change)
 
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
 
+        # --- Sidebar Setup ---
+        # The sidebar's style comes from the ModernGradientWidget class itself
+        # and is not affected by any global themes in this version.
         self.sidebar_widget = ModernGradientWidget()
         self.sidebar_widget.setFixedWidth(220)
         self.sidebar_layout = QVBoxLayout(self.sidebar_widget)
@@ -44,8 +52,9 @@ class DashboardLayoutWidget(QWidget):
         self.sidebar_layout.addWidget(self.logo_widget_sidebar, alignment=Qt.AlignmentFlag.AlignCenter)
         self.sidebar_layout.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed))
 
+        # --- Content Area Setup ---
         self.content_area = QWidget()
-        self.content_area.setStyleSheet("background-color: #ffffff;")
+        self.content_area.setStyleSheet("background-color: #ffffff;") # A simple, constant background
         self.content_layout = QVBoxLayout(self.content_area)
         self.page_stack = QStackedWidget()
         self.content_layout.addWidget(self.page_stack)
@@ -53,14 +62,13 @@ class DashboardLayoutWidget(QWidget):
         self.pages = {}
         self.sidebar_buttons = {}
 
-        # This list defines all pages and the arguments they need.
-        # We pass self.data_changed to the pages that need to communicate.
+        # This list correctly defines all pages and the arguments they need to function.
         page_definitions = [
             ("Dashboard", DashboardHomePage, []),
             ("Product", ProductPage, [self.user_id, self.product_processor, self.data_changed]),
             ("Sales", SalesPage, [self.user_id, self.product_processor, self.data_changed]),
             ("Goals", GoalsPage, [self.user_id, self.product_processor, self.data_changed]),
-            ("Profile", ProfilePage, []),
+            ("Profile", ProfilePage, [self.user_id, self.user_processor, self.data_changed]),
             ("Settings", SettingsPage, []),
         ]
 
@@ -126,14 +134,25 @@ class DashboardLayoutWidget(QWidget):
                 btn.setProperty("active", key == page_key)
                 btn.style().unpolish(btn)
                 btn.style().polish(btn)
+    
+    def handle_data_change(self, data_type):
+        """Refreshes the main window title if the user's name changed."""
+        if data_type == "user_info":
+            print("Dashboard detected user info change, updating window title...")
+            main_window = self.window()
+            if main_window and hasattr(main_window, 'set_user_info'):
+                fresh_user_data = self.user_processor.db_manager.get_user_by_id(self.user_id)
+                if fresh_user_data:
+                    main_window.set_user_info(fresh_user_data)
 
 class DashboardWindow(QMainWindow):
     app_logout_requested = Signal()
 
-    def __init__(self, user_data, db_manager_instance):
+    def __init__(self, user_data, db_manager_instance, user_processor_instance):
         super().__init__()
         self.user_data = user_data
         self.product_processor = ProductProcessor(db_manager_instance)
+        self.user_processor = user_processor_instance
 
         self.setWindowTitle(f"Track App - Dashboard ({self.user_data.get('name', 'Unknown')})")
         self.central_widget = QWidget()
@@ -150,6 +169,7 @@ class DashboardWindow(QMainWindow):
         self.dashboard_layout_widget = DashboardLayoutWidget(
             user_id=user_id,
             product_processor_instance=self.product_processor,
+            user_processor_instance=self.user_processor,
             parent=self
         )
         self.dashboard_layout_widget.logout_requested.connect(self.app_logout_requested.emit)
