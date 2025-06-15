@@ -1,4 +1,3 @@
-# view/product_page.py
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt, Slot, QTimer
 
@@ -8,14 +7,12 @@ from .add_product_dialog_ui import AddProductDialogUI
 from .shared_ui import StyledAlertDialog
 
 class ProductPage(BaseDashboardPage):
-    # --- 1. Update the constructor to accept the shared signal ---
     def __init__(self, user_id, product_processor, data_changed_signal, parent=None):
         super().__init__("Manage Your Products", parent=parent)
         self.user_id = user_id
         self.product_processor = product_processor
         self.current_products = [] 
 
-        # --- 2. Store the signal and connect it to the refresh method ---
         self.data_changed_signal = data_changed_signal
         self.data_changed_signal.connect(self.refresh_product_list)
 
@@ -29,6 +26,7 @@ class ProductPage(BaseDashboardPage):
         self.refresh_timer = QTimer()
         self.refresh_timer.setSingleShot(True)
         self.refresh_timer.timeout.connect(self.refresh_product_list)
+        self.data_changed_signal.connect(self.handle_global_data_change)
 
     def load_page_data(self):
         super().load_page_data()
@@ -87,7 +85,6 @@ class ProductPage(BaseDashboardPage):
             success, message, _ = self.product_processor.add_new_product(self.user_id, product_data)
             StyledAlertDialog.show_alert("Add Product", message, "info" if success else "error", self)
             if success:
-                # --- 3. Emit the signal to notify other pages ---
                 self.data_changed_signal.emit("products")
 
     @Slot(int)
@@ -108,7 +105,6 @@ class ProductPage(BaseDashboardPage):
             success, message = self.product_processor.update_product_details(self.user_id, product_id, updated_data)
             StyledAlertDialog.show_alert("Update Product", message, "info" if success else "error", self)
             if success:
-                # --- 3. Emit the signal to notify other pages ---
                 self.data_changed_signal.emit("products")
 
     @Slot(int, str)
@@ -121,5 +117,9 @@ class ProductPage(BaseDashboardPage):
             success, message = self.product_processor.remove_product(self.user_id, product_id)
             StyledAlertDialog.show_alert("Delete Product", message, "info" if success else "error", self)
             if success:
-                # --- 3. Emit the signal to notify other pages ---
                 self.data_changed_signal.emit("products")
+                
+    
+    def handle_global_data_change(self, data_type):
+        if data_type == "reset" or data_type == "products":
+             self.refresh_product_list()

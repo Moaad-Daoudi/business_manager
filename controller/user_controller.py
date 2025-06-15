@@ -1,4 +1,3 @@
-# controller/user_controller.py
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QTimer 
 import sys
@@ -11,7 +10,6 @@ from model.database_manager import DatabaseManager
 from processing.user_processing import UserProcessor
 
 class UserController:
-    # ... (__init__, _connect_signals, and other methods are unchanged up to show_dashboard_window) ...
     def __init__(self, app_shell):
         self.app_shell = app_shell
         try:
@@ -83,7 +81,6 @@ class UserController:
             self.show_login_page()
             return
         if not self.dashboard_win:
-            # --- MODIFIED: Pass the user_processor instance to the dashboard ---
             self.dashboard_win = DashboardWindow(
                 user_data=self.current_user_data,
                 db_manager_instance=self.db_manager,

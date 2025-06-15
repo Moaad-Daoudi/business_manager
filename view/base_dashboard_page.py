@@ -1,20 +1,17 @@
-# view/base_dashboard_page.py
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 
 class BaseDashboardPage(QWidget):
     def __init__(self, title="Page Title", parent=None):
         super().__init__(parent)
-        self.setObjectName(f"{title.replace(' ', '')}Page") # For styling or identification
-
+        self.setObjectName(f"{title.replace(' ', '')}Page") 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20) # Consistent padding
+        layout.setContentsMargins(20, 20, 20, 20) 
         layout.setSpacing(15)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop) # Content starts at the top
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop) 
 
-        # Title Label for the page
         self.title_label = QLabel(title)
-        self.title_label.setObjectName("dashboardPageTitle") # For specific styling
+        self.title_label.setObjectName("dashboardPageTitle") 
         self.title_label.setStyleSheet("""
             QLabel#dashboardPageTitle {
                 font-size: 28px;
@@ -27,8 +24,7 @@ class BaseDashboardPage(QWidget):
         """)
         layout.addWidget(self.title_label)
 
-        # Placeholder for page-specific content - subclasses will add to this layout
-        self.content_layout = layout # Expose layout for subclasses
+        self.content_layout = layout 
 
     def load_page_data(self):
         """

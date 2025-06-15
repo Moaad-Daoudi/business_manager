@@ -1,11 +1,10 @@
-# view/login_window.py
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QWidget, QLabel, QLineEdit, QPushButton,
     QVBoxLayout, QHBoxLayout, QCheckBox
 )
-from .shared_ui import ModernGradientWidget, StyledGroupBox, FeaturesGroupBox, ProjectInfoDialog, StyledAlertDialog, BASE_LINE_EDIT_STYLE # Import new alert and style
+from .shared_ui import ModernGradientWidget, StyledGroupBox, FeaturesGroupBox, ProjectInfoDialog, StyledAlertDialog, BASE_LINE_EDIT_STYLE 
 
 class LoginGroupBox(StyledGroupBox):
     login_form_submitted = Signal(str, str)
@@ -14,15 +13,15 @@ class LoginGroupBox(StyledGroupBox):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.email_input = None # Initialize to be accessible
+        self.email_input = None 
         self.password_input = None
         self.setupUI()
 
     def _set_field_error_state(self, field, has_error):
         if field:
             field.setProperty("error", has_error)
-            field.style().unpolish(field) # Important to re-apply stylesheet
-            field.style().polish(field)   # based on property changes
+            field.style().unpolish(field) 
+            field.style().polish(field)
 
     def setupUI(self):
         self.setStyleSheet("QGroupBox { background-color: white; border-radius: 16px; border: none; }")
@@ -39,7 +38,7 @@ class LoginGroupBox(StyledGroupBox):
             label = QLabel(label_text); label.setStyleSheet("font-weight: 500; font-size: 14px; color: #1976D2;")
             input_field = QLineEdit(); input_field.setPlaceholderText(placeholder)
             if password: input_field.setEchoMode(QLineEdit.Password)
-            input_field.setStyleSheet(BASE_LINE_EDIT_STYLE) # Use shared base style
+            input_field.setStyleSheet(BASE_LINE_EDIT_STYLE) 
             input_field.setMinimumHeight(45)
             field_layout.addWidget(label); field_layout.addWidget(input_field)
             return field_layout, input_field
@@ -49,12 +48,11 @@ class LoginGroupBox(StyledGroupBox):
         password_layout, self.password_input = create_input_field("Password", "Enter your password", password=True)
         layout.addLayout(password_layout)
         
-        # Reset error state when user types
         self.email_input.textChanged.connect(lambda: self._set_field_error_state(self.email_input, False))
         self.password_input.textChanged.connect(lambda: self._set_field_error_state(self.password_input, False))
 
 
-        options_layout = QHBoxLayout() # ... (rest of options_layout is the same) ...
+        options_layout = QHBoxLayout()
         self.remember_checkbox = QCheckBox()
         self.remember_checkbox.setStyleSheet("""
             QCheckBox::indicator { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #BBDEFB; }
@@ -76,7 +74,7 @@ class LoginGroupBox(StyledGroupBox):
         layout.addSpacing(15)
 
 
-        self.login_button = QPushButton("Sign in") # ... (style is the same) ...
+        self.login_button = QPushButton("Sign in")
         self.login_button.setStyleSheet("""
             QPushButton { background-color: #1565C0; color: white; border-radius: 10px;
                           font-size: 16px; font-weight: 600; padding: 14px; }
@@ -86,7 +84,7 @@ class LoginGroupBox(StyledGroupBox):
         layout.addWidget(self.login_button)
         self.login_button.clicked.connect(self._validate_and_submit_form)
 
-        signup_layout = QHBoxLayout() # ... (rest of signup_layout is the same) ...
+        signup_layout = QHBoxLayout()
         signup_layout.setAlignment(Qt.AlignCenter)
         signup_text = QLabel("Don't have an account?"); signup_text.setStyleSheet("color: #1976D2; font-size: 14px;")
         self.signup_link_button = QPushButton("Sign up")
@@ -106,7 +104,6 @@ class LoginGroupBox(StyledGroupBox):
         email = self.email_input.text().strip()
         password = self.password_input.text()
 
-        # Reset all error states first
         self._set_field_error_state(self.email_input, False)
         self._set_field_error_state(self.password_input, False)
         
@@ -123,9 +120,7 @@ class LoginGroupBox(StyledGroupBox):
             self._set_field_error_state(self.password_input, True)
 
         if errors:
-            # Use StyledAlertDialog
             StyledAlertDialog.show_alert("Login Input Error", "\n".join(errors), alert_type="error", parent=self)
-            # QMessageBox.warning(self, "Input Error", "\n".join(errors)) # Old way
             return
         
         self.login_form_submitted.emit(email, password)
@@ -133,19 +128,18 @@ class LoginGroupBox(StyledGroupBox):
     def clear_fields(self):
         if self.email_input: self.email_input.clear()
         if self.password_input: self.password_input.clear()
-        self._set_field_error_state(self.email_input, False) # Reset error style
-        self._set_field_error_state(self.password_input, False) # Reset error style
+        self._set_field_error_state(self.email_input, False) 
+        self._set_field_error_state(self.password_input, False)
         if hasattr(self, 'remember_checkbox'): self.remember_checkbox.setChecked(False)
 
 
-class LoginPage(QWidget): # ... (LoginPage remains largely the same, just ensure it calls the new alert for general login failures) ...
+class LoginPage(QWidget):
     process_login_request = Signal(str, str)
     signup_requested = Signal()
     project_info_signup_requested = Signal()
 
     def __init__(self):
         super().__init__()
-        # ... (setup of gradient_widget, content_layout, features_box, login_form_box as before) ...
         self.gradient_widget = ModernGradientWidget()
         page_layout = QHBoxLayout(self); page_layout.setContentsMargins(0,0,0,0)
         page_layout.addWidget(self.gradient_widget)
@@ -167,33 +161,27 @@ class LoginPage(QWidget): # ... (LoginPage remains largely the same, just ensure
 
     def _handle_forgot_password(self):
         StyledAlertDialog.show_alert("Forgot Password", "Password recovery is not yet implemented.", alert_type="info", parent=self)
-        # QMessageBox.information(self, "Forgot Password", "Forgot password functionality is not yet implemented.")
 
     def show_login_feedback(self, success, message):
         if success:
             self.login_form_box.clear_fields()
         else:
-            # Use StyledAlertDialog for login failure from DB
             StyledAlertDialog.show_alert("Login Failed", message, alert_type="error", parent=self)
-            # QMessageBox.warning(self, "Login Failed", message) # Old way
             if self.login_form_box.password_input:
                 self.login_form_box.password_input.clear()
                 self.login_form_box.password_input.setFocus()
-            # Highlight general error on fields if desired, though specific field errors are handled in LoginGroupBox
             self._set_field_error_state(self.login_form_box.email_input, True)
             self._set_field_error_state(self.login_form_box.password_input, True)
 
 
-    def _set_field_error_state(self, field, has_error): # Helper for LoginPage as well
+    def _set_field_error_state(self, field, has_error):
         if field:
             field.setProperty("error", has_error)
             field.style().unpolish(field)
             field.style().polish(field)
 
-    def show_project_info(self): # ... (same as before) ...
+    def show_project_info(self): 
         info_dialog = ProjectInfoDialog(self)
         if hasattr(info_dialog, 'signup_action_requested'):
             info_dialog.signup_action_requested.connect(self.project_info_signup_requested.emit)
         info_dialog.exec()
-
-# ... (if __name__ == "__main__": block for LoginPage is the same) ...

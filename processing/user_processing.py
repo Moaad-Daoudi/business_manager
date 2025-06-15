@@ -44,10 +44,8 @@ class UserProcessor:
         if not user:
             return False, "User not found."
             
-        # Verify the old password
         if not self.db_manager.verify_password(user['password_hash'], old_password):
             return False, "The old password you entered is incorrect."
             
-        # If correct, update with the new password
         update_data = {'password': new_password}
         return self.db_manager.update_user(user_id, update_data)

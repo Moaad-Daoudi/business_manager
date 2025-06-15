@@ -1,4 +1,3 @@
-# view/dashboard_window.py
 from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
@@ -21,7 +20,6 @@ from .settings_page import SettingsPage
 
 class DashboardLayoutWidget(QWidget):
     logout_requested = Signal()
-    # This signal allows pages to communicate with each other indirectly.
     data_changed = Signal(str)
 
     def __init__(self, user_id, product_processor_instance, user_processor_instance, parent=None):
@@ -30,16 +28,12 @@ class DashboardLayoutWidget(QWidget):
         self.product_processor = product_processor_instance
         self.user_processor = user_processor_instance
 
-        # Connect the signal to a handler within this layout
         self.data_changed.connect(self.handle_data_change)
 
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
 
-        # --- Sidebar Setup ---
-        # The sidebar's style comes from the ModernGradientWidget class itself
-        # and is not affected by any global themes in this version.
         self.sidebar_widget = ModernGradientWidget()
         self.sidebar_widget.setFixedWidth(220)
         self.sidebar_layout = QVBoxLayout(self.sidebar_widget)
@@ -52,9 +46,8 @@ class DashboardLayoutWidget(QWidget):
         self.sidebar_layout.addWidget(self.logo_widget_sidebar, alignment=Qt.AlignmentFlag.AlignCenter)
         self.sidebar_layout.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed))
 
-        # --- Content Area Setup ---
         self.content_area = QWidget()
-        self.content_area.setStyleSheet("background-color: #ffffff;") # A simple, constant background
+        self.content_area.setStyleSheet("background-color: #ffffff;") 
         self.content_layout = QVBoxLayout(self.content_area)
         self.page_stack = QStackedWidget()
         self.content_layout.addWidget(self.page_stack)
@@ -62,15 +55,13 @@ class DashboardLayoutWidget(QWidget):
         self.pages = {}
         self.sidebar_buttons = {}
 
-        # This list correctly defines all pages and the arguments they need to function.
         page_definitions = [
-            ("Dashboard", DashboardHomePage, []),
+            ("Dashboard", DashboardHomePage, [self.user_id, self.product_processor, self.user_processor, self.data_changed]),
             ("Product", ProductPage, [self.user_id, self.product_processor, self.data_changed]),
             ("Sales", SalesPage, [self.user_id, self.product_processor, self.data_changed]),
             ("Goals", GoalsPage, [self.user_id, self.product_processor, self.data_changed]),
             ("Profile", ProfilePage, [self.user_id, self.user_processor, self.data_changed]),
-            ("Settings", SettingsPage, []),
-        ]
+            ("Settings", SettingsPage, [self.user_id, self.product_processor, self.user_processor, self.data_changed]),        ]
 
         for key, PageClass, args in page_definitions:
             page_instance = PageClass(*args)

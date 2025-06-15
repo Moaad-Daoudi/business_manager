@@ -1,4 +1,3 @@
-# view/shared_ui.py
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, Property, Signal, QSize
 from PySide6.QtGui import QColor, QLinearGradient, QPalette, QBrush, QFont, QIcon, QPainter, QPen, QPainterPath
 from PySide6.QtWidgets import (
@@ -7,13 +6,10 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect, QApplication
 )
 
-# --- Widgets from welcome_window.py ---
-
 class RoundedButton(QPushButton):
     def __init__(self, text, parent=None, primary=False):
         super().__init__(text, parent)
         self._primary = primary
-        # Animation part removed for brevity in this refactor; can be re-added if essential.
 
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(15)
@@ -51,16 +47,16 @@ class RoundedWidget(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         path = QPainterPath()
         path.addRoundedRect(QRect(0, 0, self.width(), self.height()), 25, 25)
-        painter.fillPath(path, QColor(255, 255, 255, 240)) # Semi-transparent white
-        painter.setPen(QPen(QColor(230, 230, 230), 1)) # Subtle border
+        painter.fillPath(path, QColor(255, 255, 255, 240)) 
+        painter.setPen(QPen(QColor(230, 230, 230), 1))
         painter.drawPath(path)
 
 class BackgroundWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout(self) # Public for adding content
+        self.layout = QVBoxLayout(self) 
         self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._gradient = QLinearGradient(0, 0, 0, 0) # Initialize
+        self._gradient = QLinearGradient(0, 0, 0, 0) 
         self._gradient.setColorAt(0, QColor(0, 102, 204))
         self._gradient.setColorAt(1, QColor(95, 238, 251))
         self.setAutoFillBackground(True)
@@ -88,19 +84,18 @@ class LogoWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(255, 255, 255)) # White circle background
+        painter.setBrush(QColor(255, 255, 255)) 
         painter.drawEllipse(0, 0, 80, 80)
-        painter.setPen(QPen(QColor(0, 102, 204), 5)) # Blue "T"
+        painter.setPen(QPen(QColor(0, 102, 204), 5))
         painter.drawLine(40, 20, 40, 60)
         painter.drawLine(25, 20, 55, 20)
 
 
-# --- Widgets from login_window.py / signup_window.py ---
 
-class ModernGradientWidget(QWidget): # Used in Login/Signup pages and Dashboard Sidebar
+class ModernGradientWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self._gradient = QLinearGradient(0, 0, 0, 0) # Initialize
+        self._gradient = QLinearGradient(0, 0, 0, 0)
         self._gradient.setColorAt(0, QColor(0, 102, 204))
         self._gradient.setColorAt(1, QColor(95, 238, 251))
         self.setAutoFillBackground(True)
@@ -129,7 +124,6 @@ class StyledGroupBox(QGroupBox):
         return shadow
 
 class FeaturesGroupBox(StyledGroupBox):
-    # Signal for "En savoir plus" button
     learn_more_clicked = Signal()
 
     def __init__(self, parent=None):
@@ -187,11 +181,11 @@ class FeaturesGroupBox(StyledGroupBox):
             QPushButton:pressed { background-color: #64B5F6; }
         """)
         layout.addWidget(self.cta_button)
-        self.cta_button.clicked.connect(self.learn_more_clicked.emit) # Emit signal
+        self.cta_button.clicked.connect(self.learn_more_clicked.emit)
 
 
 class ProjectInfoDialog(QDialog):
-    signup_action_requested = Signal() # Signal for "Créer un compte"
+    signup_action_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -200,14 +194,13 @@ class ProjectInfoDialog(QDialog):
         self.setModal(True)
         self.setStyleSheet("QDialog { background-color: white; border-radius: 16px; border: 2px solid #1976D2; }")
         self.setupUI()
-        self.setWindowOpacity(0) # For fade-in
+        self.setWindowOpacity(0)
         self.fade_in_animation()
 
     def setupUI(self):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0); main_layout.setSpacing(0)
 
-        # Header
         header = QWidget(); header.setMinimumHeight(120)
         header.setStyleSheet("""
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1565C0, stop:1 #42A5F5);
@@ -222,7 +215,6 @@ class ProjectInfoDialog(QDialog):
         title_container.addWidget(title); title_container.addWidget(subtitle_dlg)
         header_layout.addLayout(title_container); header_layout.addStretch()
 
-        # Scroll Area for Content
         scroll_area = QScrollArea(); scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShape(QFrame.NoFrame)
         scroll_area.setStyleSheet("""
@@ -235,7 +227,6 @@ class ProjectInfoDialog(QDialog):
         content_layout = QVBoxLayout(content_widget)
         content_layout.setContentsMargins(40, 30, 40, 30); content_layout.setSpacing(25)
 
-        # Summary
         summary_title = QLabel("À propos de BizTrack360 :"); summary_title.setStyleSheet("font-size: 24px; font-weight: 700; color: #0D47A1; margin-top: 5px;")
         summary_text = QLabel(
             "BizTrack360 est une application de gestion financière intuitive développée pour les entrepreneurs "
@@ -243,7 +234,6 @@ class ProjectInfoDialog(QDialog):
         ); summary_text.setWordWrap(True); summary_text.setStyleSheet("font-size: 16px; color: #424242; line-height: 150%;")
         content_layout.addWidget(summary_title); content_layout.addWidget(summary_text)
 
-        # Advantages
         advantages_data = [
             {"title": "Gérez votre activité comme un pro, sans prise de tête", "description": "BizTrack360 vous offre un espace centralisé pour tout gérer : vos produits, vos ventes, vos objectifs, votre historique, vos performances. En gros, vous avez tout sous la main, sans avoir besoin de dix applis différentes ou de vous battre avec des tableaux Excel mal foutus. C'est simple, clair, et ça vous fait gagner un temps fou."},
             {"title": "Des graphiques et des chiffres qui parlent enfin votre langue", "description": "Pas besoin d'être analyste pour comprendre vos résultats. L'application transforme vos données en graphiques lisibles et dashboards propres. Vous voyez instantanément quels produits cartonnent, combien vous avez gagné, et si vous êtes sur la bonne voie pour atteindre vos objectifs."},
@@ -260,11 +250,9 @@ class ProjectInfoDialog(QDialog):
             card_layout.addWidget(title_label); card_layout.addWidget(desc_label)
             content_layout.addWidget(advantage_card)
 
-        # Separator
         separator = QFrame(); separator.setFrameShape(QFrame.HLine); separator.setStyleSheet("background-color: #E3F2FD; margin: 10px 0;"); separator.setFixedHeight(1)
         content_layout.addWidget(separator)
 
-        # Technologies
         tech_title = QLabel("Technologies utilisées :"); tech_title.setStyleSheet("font-size: 20px; font-weight: 700; color: #0D47A1; margin-top: 5px;")
         content_layout.addWidget(tech_title)
         technologies = ["<b>PySide6</b> (UI)", "<b>SQLite3</b> (Base de données locale)", "<b>Matplotlib / PyQtGraph</b> (Visualisation)", "<b>Python natif</b> (Backend, logique)"]
@@ -277,7 +265,6 @@ class ProjectInfoDialog(QDialog):
         content_layout.addWidget(tech_container)
         content_layout.addStretch()
 
-        # Buttons (bottom)
         button_container = QWidget()
         button_layout = QHBoxLayout(button_container); button_layout.setContentsMargins(40, 20, 40, 30)
         self.signup_button_dlg = QPushButton("Créer un compte")
@@ -287,7 +274,7 @@ class ProjectInfoDialog(QDialog):
             QPushButton:hover { background-color: #1565C0; }
             QPushButton:pressed { background-color: #0D47A1; }
         """); self.signup_button_dlg.setCursor(Qt.PointingHandCursor)
-        self.signup_button_dlg.clicked.connect(self._emit_signup_action) # Connect to emit signal
+        self.signup_button_dlg.clicked.connect(self._emit_signup_action)
 
         close_button = QPushButton("Fermer")
         close_button.setStyleSheet("""
@@ -296,7 +283,7 @@ class ProjectInfoDialog(QDialog):
             QPushButton:hover { background-color: #EEEEEE; }
             QPushButton:pressed { background-color: #E0E0E0; }
         """); close_button.setCursor(Qt.PointingHandCursor)
-        close_button.clicked.connect(self.accept) # Closes the dialog
+        close_button.clicked.connect(self.accept)
 
         button_layout.addWidget(self.signup_button_dlg); button_layout.addStretch(); button_layout.addWidget(close_button)
 
@@ -305,21 +292,13 @@ class ProjectInfoDialog(QDialog):
 
     def _emit_signup_action(self):
         self.signup_action_requested.emit()
-        self.accept() # Close dialog after emitting
+        self.accept()
 
     def fade_in_animation(self):
         self.animation = QPropertyAnimation(self, b"windowOpacity")
         self.animation.setDuration(250); self.animation.setStartValue(0); self.animation.setEndValue(1)
         self.animation.setEasingCurve(QEasingCurve.InOutQuad); self.animation.start()
         
-# view/shared_ui.py
-# ... (other imports: QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, Qt, QFont, QColor)
-
-# (Keep RoundedButton, RoundedWidget, BackgroundWidget, LogoWidget, ModernGradientWidget,
-# StyledGroupBox, FeaturesGroupBox, ProjectInfoDialog as they are)
-
-
-# --- NEW: Styled Alert Dialog ---
 class StyledAlertDialog(QDialog):
     def __init__(self, title, message, alert_type="info", parent=None):
         super().__init__(parent)
@@ -327,7 +306,6 @@ class StyledAlertDialog(QDialog):
         self.setMinimumWidth(450)
         self.setModal(True)
 
-        # Base styling
         self.setStyleSheet("""
             QDialog {
                 background-color: white;
@@ -340,30 +318,29 @@ class StyledAlertDialog(QDialog):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Header (colored based on alert_type)
         header_widget = QWidget()
-        header_widget.setMinimumHeight(60) # Reduced header height
+        header_widget.setMinimumHeight(60)
         header_layout = QHBoxLayout(header_widget)
         header_layout.setContentsMargins(20, 15, 20, 15)
 
-        icon_label = QLabel() # For icon
+        icon_label = QLabel()
         icon_label.setFixedSize(28, 28)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
 
         if alert_type == "error":
-            header_bg_color = "#FFEBEE" # Light red
-            header_text_color = "#D32F2F" # Darker red
-            icon_char = "✕" # Or use an SVG/PNG icon
+            header_bg_color = "#FFEBEE" 
+            header_text_color = "#D32F2F"
+            icon_char = "✕"
             icon_font_size = "20px"
         elif alert_type == "warning":
-            header_bg_color = "#FFF9C4" # Light yellow
-            header_text_color = "#FBC02D" # Darker yellow
+            header_bg_color = "#FFF9C4" 
+            header_text_color = "#FBC02D" 
             icon_char = "⚠"
             icon_font_size = "20px"
-        else: # info
-            header_bg_color = "#E3F2FD" # Light blue
-            header_text_color = "#1976D2" # Darker blue
+        else:
+            header_bg_color = "#E3F2FD" 
+            header_text_color = "#1976D2"
             icon_char = "ℹ"
             icon_font_size = "20px"
 
@@ -385,7 +362,7 @@ class StyledAlertDialog(QDialog):
             }}
         """)
 
-        self.title_label_dlg = QLabel(title) # Renamed to avoid conflict
+        self.title_label_dlg = QLabel(title) 
         self.title_label_dlg.setStyleSheet(f"""
             QLabel {{
                 font-size: 18px;
@@ -402,13 +379,12 @@ class StyledAlertDialog(QDialog):
 
         main_layout.addWidget(header_widget)
 
-        # Message content
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(25, 20, 25, 25) # Increased padding
+        content_layout.setContentsMargins(25, 20, 25, 25)
         content_layout.setSpacing(15)
 
-        self.message_label_dlg = QLabel(message) # Renamed to avoid conflict
+        self.message_label_dlg = QLabel(message)
         self.message_label_dlg.setWordWrap(True)
         self.message_label_dlg.setStyleSheet("""
             QLabel {
@@ -450,33 +426,87 @@ class StyledAlertDialog(QDialog):
         footer_layout.addWidget(self.ok_button)
 
         main_layout.addWidget(footer_widget)
-        self.adjustSize() # Adjust dialog size to content
+        self.adjustSize()
 
     @staticmethod
     def show_alert(title, message, alert_type="info", parent=None):
         dialog = StyledAlertDialog(title, message, alert_type, parent)
         return dialog.exec()
 
-# --- QLineEdit Stylesheet Update (within LoginGroupBox/SignupGroupBox or globally) ---
-# We will apply this dynamically. The base style will be in the GroupBox classes.
-# An "error" property will be added to QLineEdit to trigger the red border.
-
-# QLineEdit base style (example for login/signup forms)
-# This will be part of the create_input_field function in login_window.py and signup_window.py
 BASE_LINE_EDIT_STYLE = """
     QLineEdit {
-        border: 1px solid #BBDEFB; /* Default border */
+        border: 1px solid #BBDEFB; 
         border-radius: 10px;
         padding: 12px;
         font-size: 15px;
         background-color: #E3F2FD;
     }
     QLineEdit:focus {
-        border: 2px solid #2196F3; /* Focus border */
+        border: 2px solid #2196F3;
         background-color: white;
     }
-    QLineEdit[error="true"] { /* Style for error state */
-        border: 2px solid #D32F2F; /* Red border for error */
-        background-color: #FFEBEE; /* Light red background for error */
+    QLineEdit[error="true"] { 
+        border: 2px solid #D32F2F; 
+        background-color: #FFEBEE; 
     }
 """
+
+class ThemeToggleSwitch(QWidget):
+    toggled = Signal(bool)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(60, 32)
+        self.setCursor(Qt.PointingHandCursor)
+        self._checked = False
+
+        self._thumb_color = QColor("#FFFFFF")
+        self._track_color_off = QColor("#767577")
+        self._track_color_on = QColor("#007AFF") 
+
+        self.thumb_x_pos = 3 
+        
+        self.animation = QPropertyAnimation(self, b"thumb_x_pos_prop", self)
+        self.animation.setDuration(200)
+        self.animation.setEasingCurve(QEasingCurve.InOutCubic)
+
+    def isChecked(self):
+        return self._checked
+
+    def setChecked(self, checked):
+        self._checked = checked
+        
+        start_pos = 3 if not checked else 31
+        end_pos = 31 if checked else 3
+        
+        self.animation.setStartValue(start_pos)
+        self.animation.setEndValue(end_pos)
+        self.animation.start()
+        
+        self.toggled.emit(self._checked)
+
+    @Property(int)
+    def thumb_x_pos_prop(self):
+        return self.thumb_x_pos
+
+    @thumb_x_pos_prop.setter
+    def thumb_x_pos_prop(self, value):
+        self.thumb_x_pos = value
+        self.update() 
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        track_color = self._track_color_on if self._checked else self._track_color_off
+        
+        painter.setBrush(QBrush(track_color))
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(0, 3, self.width(), 26, 13, 13)
+
+        painter.setBrush(QBrush(self._thumb_color))
+        painter.drawEllipse(self.thumb_x_pos, 5, 22, 22)
+
+    def mousePressEvent(self, event):
+        self.setChecked(not self.isChecked())
+        super().mousePressEvent(event)

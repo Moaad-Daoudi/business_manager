@@ -1,13 +1,10 @@
-# populate_random_sales.py
 import sqlite3
 import random
 from datetime import datetime, timedelta
 import os
 
-# --- CONFIGURE THIS ---
-# Assumes the script is in the root project folder
 DATABASE_PATH = 'app_database.db'
-USER_ID_TO_POPULATE = 1 # Change this to the user ID you want to add sales for
+USER_ID_TO_POPULATE = 1 
 
 def get_products(cursor, user_id):
     cursor.execute("SELECT id, selling_price, stock_quantity FROM user_products WHERE user_id = ?", (user_id,))
@@ -32,46 +29,39 @@ def create_random_sales():
 
     for product_id, price, stock in products:
         if stock <= 0:
-            continue # Can't sell what you don't have
+            continue 
 
-        # For each product, create 1 to 5 random sales
         num_sales = random.randint(1, 5)
         
         for _ in range(num_sales):
-            if stock <= 0: break # Stop if we run out of stock for this product
+            if stock <= 0: break 
 
-            # Sell a random quantity (but not more than current stock)
             quantity_sold = random.randint(1, min(2, stock))
             
-            # Create a sale date in the last 30 days
             sale_date = datetime.now() - timedelta(days=random.randint(0, 30))
             total_amount = quantity_sold * price
             
             try:
-                # Use a transaction to ensure data integrity
                 cursor.execute("BEGIN TRANSACTION")
 
-                # 1. Create sale record
                 cursor.execute(
                     "INSERT INTO sales (user_id, sale_date, total_amount) VALUES (?, ?, ?)",
                     (USER_ID_TO_POPULATE, sale_date, total_amount)
                 )
                 sale_id = cursor.lastrowid
 
-                # 2. Create sale_items record
                 cursor.execute(
                     "INSERT INTO sale_items (sale_id, product_id, quantity_sold, price_at_sale) VALUES (?, ?, ?, ?)",
                     (sale_id, product_id, quantity_sold, price)
                 )
 
-                # 3. Update product stock (THIS IS IMPORTANT)
                 cursor.execute(
                     "UPDATE user_products SET stock_quantity = stock_quantity - ? WHERE id = ?",
                     (quantity_sold, product_id)
                 )
                 
                 conn.commit()
-                stock -= quantity_sold # Update local variable for next loop iteration
+                stock -= quantity_sold
                 sales_created += 1
 
             except sqlite3.Error as e:
