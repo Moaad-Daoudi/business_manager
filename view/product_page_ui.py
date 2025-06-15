@@ -191,15 +191,16 @@ class ProductCardWidget(QFrame):
         if pixmap.isNull():
             pixmap = QPixmap("assets/placeholder.png")
 
-        target_width = min(280, self.width() - 32)
+        target_width = self.width()
         scaled_pixmap = pixmap.scaled(target_width, 140, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
         
-        w, h = target_width, 140
-        px, py = (scaled_pixmap.width() - w) / 2, (scaled_pixmap.height() - h) / 2
-        cropped_pixmap = scaled_pixmap.copy(int(px), int(py), w, h)
+        target_height = 160 
+        
+        py = max(0, (scaled_pixmap.height() - target_height) / 2)
+        
+        cropped_pixmap = scaled_pixmap.copy(0, int(py), target_width, target_height)
         
         self.image_label.setPixmap(cropped_pixmap)
-
 
 class ProductPageUI(QWidget):
     def __init__(self, parent=None):
