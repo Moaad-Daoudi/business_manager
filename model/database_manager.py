@@ -234,7 +234,7 @@ class DatabaseManager:
                 quantity_sold INTEGER NOT NULL, 
                 price_at_sale REAL NOT NULL,
                 FOREIGN KEY(sale_id) REFERENCES sales(id) ON DELETE CASCADE,
-                FOREIGN KEY(product_id) REFERENCES user_products(id) ON DELETE SET NULL
+                FOREIGN KEY(product_id) REFERENCES user_products(id) ON DELETE CASCADE
             )
             """)
         self.conn.commit()
